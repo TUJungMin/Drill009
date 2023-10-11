@@ -1,6 +1,6 @@
 # 이것은 각 상태들을 객체로 구현한 것임.
 
-from pico2d import load_image, SDL_KEYDOWN, SDLK_SPACE, get_time, SDLK_RIGHT, SDL_KEYUP, SDLK_LEFT
+from pico2d import load_image, SDL_KEYDOWN, SDLK_SPACE, get_time, SDLK_RIGHT, SDL_KEYUP, SDLK_LEFT,SDLK_a
 
 import math
 
@@ -12,10 +12,13 @@ def space_down(e):
 def time_out(e):
     return e[0] == 'TIME_OUT'
 
-
+def AutoRun(e):
+    return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
 def right_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_RIGHT
 
+def auto_run(e):
+    return e[0] == 'AUTORUN'
 
 def right_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
@@ -48,8 +51,8 @@ class Idle:
     @staticmethod
     def do(boy):
         boy.frame = (boy.frame + 1) % 8
-        if get_time() - boy.idle_start_time > 3:
-            boy.state_machine.handle_event(('TIME_OUT', 0))
+        if get_time() - boy.idle_start_time > 5:
+            boy.state_machine.handle_event(('INPUT', 0))
 
     @staticmethod
     def draw(boy):
@@ -82,6 +85,40 @@ class Sleep:
         pass
 
 
+class autorun:
+    @staticmethod
+    def enter(boy, e):
+        if boy.action == 0:
+            boy.action = 2
+        elif boy.action == 1:
+            boy.action = 3
+
+        boy.frame = 0
+        boy.idle_start_time = get_time()
+        boy.dir = 1  # 초기 방향 설정 (오른쪽)
+
+    @staticmethod
+    def exit(boy, e):
+        pass
+
+    @staticmethod
+    def do(boy):
+        boy.frame = (boy.frame + 1) % 8
+        if get_time() - boy.idle_start_time > 5:
+            boy.state_machine.handle_event(('TIME_OUT', 0))
+
+        # 맵 끝에 도달하면 방향을 반대로 바꿉니다
+        if boy.x <= 0:
+            boy.dir, boy.action = 1, 1
+        elif boy.x >= 800:
+            boy.dir, boy.action = -1, 0
+
+        boy.x += boy.dir * 5  # 방향에 따라 움직임
+
+    @staticmethod
+    def draw(boy):
+        boy.image.clip_draw(boy.frame * 100, boy.action * 100, 100, 100, boy.x, boy.y)
+        pass
 class Run:
     @staticmethod
     def enter(boy, e):
@@ -112,10 +149,12 @@ class StateMachine:
         self.boy = boy
         self.cur_state = Idle
         self.transitions = {
-            Idle: {right_down: Run, left_down: Run, left_up: Run, right_up: Run, time_out: Sleep},
+            Idle: {right_down: Run, left_down: Run, left_up: Run, right_up: Run, time_out: Sleep, AutoRun: autorun},
             Run: {right_down: Idle, left_down: Idle, right_up: Idle, left_up: Idle},
-            Sleep: {right_down: Run, left_down: Run, right_up: Run, left_up: Run, space_down: Idle}
+            Sleep: {right_down: Run, left_down: Run, right_up: Run, left_up: Run, space_down: Idle},
+            autorun: {right_down: Run, left_down: Run, right_up: Run, left_up: Run, time_out: Idle, AutoRun: autorun}
         }
+
 
     def start(self):
         self.cur_state.enter(self.boy, ('NONE', 0))
