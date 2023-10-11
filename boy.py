@@ -88,10 +88,10 @@ class Sleep:
 class autorun:
     @staticmethod
     def enter(boy, e):
-        if boy.action == 0:
-            boy.action = 2
-        elif boy.action == 1:
-            boy.action = 3
+       # if boy.action == 0:
+           # boy.action = 2
+       # elif boy.action == 1:
+           # boy.action = 3
 
         boy.frame = 0
         boy.idle_start_time = get_time()
@@ -113,11 +113,11 @@ class autorun:
         elif boy.x >= 800:
             boy.dir, boy.action = -1, 0
 
-        boy.x += boy.dir * 5  # 방향에 따라 움직임
+        boy.x += boy.dir * 10  # 방향에 따라 움직임
 
     @staticmethod
     def draw(boy):
-        boy.image.clip_draw(boy.frame * 100, boy.action * 100, 100, 100, boy.x, boy.y)
+        boy.image.clip_draw(boy.frame * 100, boy.action * 100, 100, 100, boy.x, boy.y+30,200,200)
         pass
 class Run:
     @staticmethod
@@ -152,7 +152,7 @@ class StateMachine:
             Idle: {right_down: Run, left_down: Run, left_up: Run, right_up: Run, time_out: Sleep, AutoRun: autorun},
             Run: {right_down: Idle, left_down: Idle, right_up: Idle, left_up: Idle},
             Sleep: {right_down: Run, left_down: Run, right_up: Run, left_up: Run, space_down: Idle},
-            autorun: {right_down: Run, left_down: Run, right_up: Run, left_up: Run, time_out: Idle, AutoRun: autorun}
+            autorun: {right_down: autorun, left_down: autorun, right_up: autorun, left_up: autorun, time_out: Idle}
         }
 
 
