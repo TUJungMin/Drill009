@@ -88,10 +88,10 @@ class Sleep:
 class autorun:
     @staticmethod
     def enter(boy, e):
-       # if boy.action == 0:
-           # boy.action = 2
-       # elif boy.action == 1:
-           # boy.action = 3
+        if boy.action == 2:
+            boy.action = 0
+        elif boy.action == 3:
+            boy.action = 1
 
         boy.frame = 0
         boy.idle_start_time = get_time()
