@@ -1,6 +1,6 @@
 # 이것은 각 상태들을 객체로 구현한 것임.
 
-from pico2d import load_image, SDL_KEYDOWN, SDLK_SPACE, get_time, SDLK_RIGHT, SDL_KEYUP, SDLK_LEFT,SDLK_a
+from pico2d import load_image, SDL_KEYDOWN, SDLK_SPACE, get_time, SDLK_RIGHT, SDL_KEYUP, SDLK_LEFT, SDLK_a
 
 import math
 
@@ -12,13 +12,18 @@ def space_down(e):
 def time_out(e):
     return e[0] == 'TIME_OUT'
 
+
 def AutoRun(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_a
+
+
 def right_down(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYDOWN and e[1].key == SDLK_RIGHT
 
+
 def auto_run(e):
     return e[0] == 'AUTORUN'
+
 
 def right_up(e):
     return e[0] == 'INPUT' and e[1].type == SDL_KEYUP and e[1].key == SDLK_RIGHT
@@ -52,7 +57,7 @@ class Idle:
     def do(boy):
         boy.frame = (boy.frame + 1) % 8
         if get_time() - boy.idle_start_time > 5:
-            boy.state_machine.handle_event(('INPUT', 0))
+            boy.state_machine.handle_event(('TIME_OUT', 0))
 
     @staticmethod
     def draw(boy):
@@ -93,6 +98,7 @@ class autorun:
         elif boy.action == 3:
             boy.action = 1
 
+        boy.action = 1
         boy.frame = 0
         boy.idle_start_time = get_time()
         boy.dir = 1  # 초기 방향 설정 (오른쪽)
@@ -117,8 +123,10 @@ class autorun:
 
     @staticmethod
     def draw(boy):
-        boy.image.clip_draw(boy.frame * 100, boy.action * 100, 100, 100, boy.x, boy.y+30,200,200)
+        boy.image.clip_draw(boy.frame * 100, boy.action * 100, 100, 100, boy.x, boy.y + 30, 200, 200)
         pass
+
+
 class Run:
     @staticmethod
     def enter(boy, e):
@@ -152,9 +160,9 @@ class StateMachine:
             Idle: {right_down: Run, left_down: Run, left_up: Run, right_up: Run, time_out: Sleep, AutoRun: autorun},
             Run: {right_down: Idle, left_down: Idle, right_up: Idle, left_up: Idle},
             Sleep: {right_down: Run, left_down: Run, right_up: Run, left_up: Run, space_down: Idle},
-            autorun: {right_down: autorun, left_down: autorun, right_up: autorun, left_up: autorun, time_out: Idle}
+            autorun: {right_down: autorun, left_down: autorun, right_up: autorun, left_up: autorun, time_out: Idle,
+                      AutoRun: Idle}
         }
-
 
     def start(self):
         self.cur_state.enter(self.boy, ('NONE', 0))
@@ -163,6 +171,8 @@ class StateMachine:
         for check_event, next_state in self.transitions[self.cur_state].items():
             if check_event(e):
                 self.cur_state.exit(self.boy, e)
+                if self.cur_state is autorun:  # 현재 상태가 autorun이면
+                    e = 'AutoRun' if self.cur_state is not autorun else e  # 토글 (상태에 따라 다음 이벤트 설정)
                 self.cur_state = next_state
                 self.cur_state.enter(self.boy, e)
                 return True
